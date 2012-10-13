@@ -1,0 +1,9 @@
+<resources>
+
+    <string name="app_name">NfcTest4</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_main">FeliCa Lite</string>
+    <string name="btn_read">Read</string>
+
+</resources>
