@@ -6,10 +6,25 @@ import android.nfc.Tag;
 import android.nfc.tech.NfcF;
 
 
+/**
+ * @class	FelicaLite
+ * @brief	FeliCa Lite card access
+ */
 public class FelicaLite {
 	private static Tag mTag;
 	private static NfcF mNfcF;
 
+	/**
+	 * 使用する場合、最初に呼び出す。
+	 * 内部で{@link NfcF#connect()}を呼び出す。
+	 * 呼び出し場合、最後に{@link FelicaLite#close()}を呼び出すこと。
+	 * 
+	 * @param[in]	tag		intentで取得したTag
+	 * @return		NfcF
+	 * @throws IOException
+	 *  
+	 * @sa			{@link FelicaLite#close()}
+	 */
 	public static NfcF connect(Tag tag) throws IOException {
 		mTag = tag;
 		mNfcF = NfcF.get(tag);
@@ -17,6 +32,15 @@ public class FelicaLite {
 		return mNfcF;
 	}
 	
+	
+	/**
+	 * {@link FelicaLite#connect()}を呼び出したら、最後に呼び出すこと。
+	 * 内部で{@link NfcF#close()}を呼び出す。
+	 * 
+	 * @throws IOException
+	 * 
+	 * @sa		{@link FelicaLite#connect(Tag)}
+	 */
 	public static void close() throws IOException {
 		mNfcF.close();
 		mTag = null;
@@ -24,7 +48,20 @@ public class FelicaLite {
 	}
 	
 
+	/**
+	 * 1ブロック書込み
+	 * 
+	 * @param[in] blockNo		書込対象のブロック番号
+	 * @param[in] data			書き込みデータ(先頭の16byteを使用)
+	 * @return		true:書込成功
+	 * @throws IOException
+	 */
 	public static boolean writeBlock(int blockNo, byte[] data) throws IOException {
+		if((data == null) || (data.length < 16)) {
+			//データ不正
+			return false;
+		}
+		
 		byte[] buf = new byte[32];
 		buf[0] = 32;					//length
 		buf[1] = (byte)0x08;			//Write Without Encryption
@@ -52,7 +89,7 @@ public class FelicaLite {
 			}
 		}
 		//status flag check
-		if((ret[10] != 0x00) || (ret[11] != 0x00)) {
+		if((ret[1] != 0x09) || (ret[10] != 0x00) || (ret[11] != 0x00)) {
 			ret = null;
 			return false;
 		}
@@ -60,6 +97,14 @@ public class FelicaLite {
 		return true;
 	}
 	
+	
+	/**
+	 * 1ブロック読み込み
+	 * 
+	 * @param[in] blockNo		読込対象のブロック番号
+	 * @return					(!=null)読み込んだ1ブロックデータ / (==null)エラー
+	 * @throws IOException
+	 */
 	public static byte[] readBlock(int blockNo) throws IOException {
 		byte[] buf = new byte[16];
 		buf[0] = 16;					//length
@@ -87,7 +132,7 @@ public class FelicaLite {
 			}
 		}
 		//status flag check
-		if((ret[10] != 0x00) || (ret[11] != 0x00)) {
+		if((ret[1] != 0x07) || (ret[10] != 0x00) || (ret[11] != 0x00)) {
 			ret = null;
 			return null;
 		}
