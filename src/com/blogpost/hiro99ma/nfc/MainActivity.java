@@ -89,6 +89,28 @@ public class MainActivity extends Activity {
 		}
 	}
 	
+	public void onClickReadDid(View v) {
+		if (mTag == null) {
+			Toast.makeText(this, "no card", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		try {
+			FelicaLite.connect(mTag);
+			byte[] rd = FelicaLite.readBlock(0x83);
+			if(rd != null) {
+				TextView tv = (TextView)findViewById(R.id.textRead);
+				String s = "";
+				for(int i=0; i<rd.length; i++) {
+					s += String.format("%02x-", rd[i]);
+				}
+				tv.setText(s);
+			}
+			FelicaLite.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public void onClickWrite(View v) {
 		if (mTag == null) {
 			Toast.makeText(this, "no card", Toast.LENGTH_SHORT).show();
