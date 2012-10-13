@@ -88,4 +88,24 @@ public class MainActivity extends Activity {
 			e.printStackTrace();
 		}
 	}
+	
+	public void onClickWrite(View v) {
+		if (mTag == null) {
+			Toast.makeText(this, "no card", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		try {
+			FelicaLite.connect(mTag);
+			byte[] wr = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+			boolean ret = FelicaLite.writeBlock(10, wr);
+			if(ret) {
+				Toast.makeText(this, "success", Toast.LENGTH_SHORT).show();
+			} else {
+				Toast.makeText(this, "fail", Toast.LENGTH_SHORT).show();
+			}
+			FelicaLite.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }

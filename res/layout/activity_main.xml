@@ -22,4 +22,14 @@
         android:onClick="onClickRead"
         android:text="@string/btn_read" />
 
+    <Button
+        android:id="@+id/buttonWrite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="52dp"
+        android:onClick="onClickWrite"
+        android:text="@string/btn_write" />
+
 </RelativeLayout>
