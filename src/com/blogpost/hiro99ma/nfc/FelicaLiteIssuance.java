@@ -117,8 +117,9 @@ public final class FelicaLiteIssuance {
 
 	
 	/**
-	 * MAC比較
-	 * {@link FelicaLite#connect()}を呼び出しておくこと。
+	 * MAC比較<br>
+	 * <br>
+	 * {@link FelicaLite#connect()}を呼び出しておくこと。<br>
 	 *
 	 * @param masterKey	[in]個別化マスター鍵(24byte)
 	 * @return		true	MAC一致
@@ -130,14 +131,16 @@ public final class FelicaLiteIssuance {
 
 
 	/**
-	 * システムブロックの書き換え禁止(MC_ALL)
-	 * 処理が成功した場合、MC_ALLレジスタは書き込み可能に戻すことができなくなる。
-	 * 本当に呼び出してよいかどうかは、FeliCa Liteユーザーズマニュアルを確認すること。
-	 * 少なくとも、NFCの実験目的でやっているような場合は、呼び出す必要はほとんどない。
+	 * システムブロックの書き換え禁止(不可逆なので要注意)<br>
+	 * <br>
+	 * 処理が成功した場合、MC_ALLレジスタは書き込み可能に戻すことができなくなる。<br>
+	 * 本当に呼び出してよいかどうかは、FeliCa Liteユーザーズマニュアルを確認すること。<br>
+	 * 少なくとも、NFCの実験目的でやっているような場合は、呼び出す必要はない。<br>
+	 * <br>
+	 * {@link FelicaLite#connect()}を呼び出しておくこと。<br>
 	 * 
 	 * @return		true:書き換え禁止成功
 	 * @throws IOException
-	 * @note	#FelicaLite.connect()を呼び出しておくこと。
 	 * @attention	実行すると、システム領域の一部が書込禁止になり、元に戻すことはできない
 	 */
 	public static boolean writeIssuance1() throws IOException {
@@ -159,7 +162,7 @@ public final class FelicaLiteIssuance {
 	
 
 	/**
-	 * システムコード確認
+	 * システムコード確認<br>
 	 *
 	 * @return	true	FeliCa Liteである
 	 * @throws IOException 
@@ -187,12 +190,13 @@ public final class FelicaLiteIssuance {
 
 	
 	/**
-	 * 未発行確認
+	 * 未発行確認<br>
+	 * <br>
+	 * - MCレジスタ3バイト目(MC_ALL)が0x00なら、1次発行済み<br>
+	 * - MCレジスタ2バイト目(MC_SP[1])のb7が0なら、2次発行済み<br>
 	 *
 	 * @return		true	未発行である
 	 * @throws IOException 
-	 * @note	- MCレジスタ3バイト目(MC_ALL)が0x00なら、1次発行済み
-	 * 			- MCレジスタ2バイト目(MC_SP[1])のb7が0なら、2次発行済み
 	 */
 	private static boolean checkNotIssuance() throws IOException {
 		byte[] buf = FelicaLite.readBlock(FelicaLite.MC);
@@ -212,11 +216,13 @@ public final class FelicaLiteIssuance {
 	}
 
 	/**
-	 * IDの設定
-	 * 0～7   : D_IDの前半8byte
-	 * 8～9   : DFD
-	 * 10～15 : 任意
+	 * IDの設定<br>
+	 * 0～7   : D_IDの前半8byte<br>
+	 * 8～9   : DFD<br>
+	 * 10～15 : 任意<br>
 	 * 
+	 * @param	dfd		[in]DFD
+	 * @return	true	書込成功
 	 * @throws IOException 
 	 *
 	 */
@@ -249,12 +255,11 @@ public final class FelicaLiteIssuance {
 	
 
 	/**
-	 * カード鍵の書き込み.
-	 * 
-	 * 24byteの個別化マスター鍵と16byteのIDブロックから個別化カード鍵を作成し、書き込む。
+	 * カード鍵の書き込み.<br>
+	 * <br>
+	 * 24byteの個別化マスター鍵と16byteのIDブロックから個別化カード鍵を作成し、書き込む。<br>
 	 *
-	 * @param masterKey	個別化マスター鍵(24byte)
-	 *
+	 * @param masterKey	[in]個別化マスター鍵(24byte)
 	 * @return
 	 * @throws IOException 
 	 */
@@ -289,17 +294,17 @@ public final class FelicaLiteIssuance {
 
 
 	/**
-	 * MAC比較
-	 * 
-	 * RCにランダム値を書き込んだ後、IDブロックとMACブロックを2ブロック同時に読み込む。
-	 * そのときのMACと、RCと個別化マスター鍵で計算したMACを比較する。
+	 * MAC比較<br>
+	 * <br>
+	 * RCにランダム値を書き込んだ後、IDブロックとMACブロックを2ブロック同時に読み込む。<br>
+	 * そのときのMACと、RCと個別化マスター鍵で計算したMACを比較する。<br>
 	 *
-	 * @param masterKey	個別化マスター鍵(24byte)
-	 *
+	 * @param masterKey	[in]個別化マスター鍵(24byte)
+	 * @param ck			[in]カード鍵。nullの場合、masterKeyから計算する。
 	 * @return		true	MAC一致
 	 * @throws IOException 
 	 */
-	private static boolean macCheckInternal(byte[] masterKey, byte[] dummy) throws IOException {
+	private static boolean macCheckInternal(byte[] masterKey, byte[] ck) throws IOException {
 		//カードのMAC(IDブロック)→buf[0-15]にIDが、buf[16-31]にMACが入る
 		byte[] rc = new byte[FelicaLite.SIZE_BLOCK];			//ランダム値を入れる
 		SecureRandom random = new SecureRandom();
@@ -317,7 +322,6 @@ public final class FelicaLiteIssuance {
 		}
 
 		//個別化カード鍵の計算→ck
-		byte[] ck = dummy;
 		if(ck == null) {
 			ck = new byte[16];
 			ret = calcPersonalCardKey(ck, masterKey, buf);
@@ -348,10 +352,9 @@ public final class FelicaLiteIssuance {
 
 
 	/**
-	 * 鍵バージョン書き込み
+	 * 鍵バージョン書き込み<br>
 	 *
-	 * @param keyVersion	鍵バージョン
-	 *
+	 * @param keyVersion	[in]鍵バージョン
 	 * @return		true	書き込み成功
 	 * @throws IOException 
 	 */
@@ -370,11 +373,10 @@ public final class FelicaLiteIssuance {
 	
 	
 	/**
-	 * チェック付きブロック書き込み(16byte)
+	 * チェック付きブロック書き込み(16byte)<br>
 	 *
-	 * @param buf		書き込みデータ
-	 * @param blockNo	書き込みブロック番号
-	 *
+	 * @param buf		[in]書き込みデータ
+	 * @param blockNo	[in]書き込みブロック番号
 	 * @return	true	チェックOK
 	 * @throws IOException 
 	 */
@@ -402,15 +404,14 @@ public final class FelicaLiteIssuance {
 
 	
 	/**
-	 * MAC計算
-	 * 
-	 * 8byteごとにエンディアンをひっくり返す
+	 * MAC計算<br>
+	 * <br>
+	 * 8byteごとにエンディアンをひっくり返す<br>
 	 *
-	 * @param mac	MAC計算結果(先頭から8byte書く)。エラーになっても書き換える可能性あり。
-	 * @param ck	カード鍵(16byte)
-	 * @param id	ID(16byte)
-	 * @param rc	ランダムチャレンジブロック(16byte)
-	 *
+	 * @param mac	[out]MAC計算結果(先頭から8byte書く)。エラーになっても書き換える可能性あり。
+	 * @param ck	[in]カード鍵(16byte)
+	 * @param id	[in]ID(16byte)
+	 * @param rc	[in]ランダムチャレンジブロック(16byte)
 	 * @return		true	MAC計算成功
 	 */
 	private static boolean calcMac(byte[] mac, byte[] ck, byte[] id, byte[] rc) {
@@ -488,10 +489,9 @@ public final class FelicaLiteIssuance {
 	/**
 	 * 個別化カード鍵作成
 	 *
-	 * @param[out] personalKey	生成した個別化カード鍵(16byte)
-	 * @param[in] masterKey	個別化マスター鍵K(24byte)
-	 * @param[in] id			IDブロックM(16byte)
-	 *
+	 * @param personalKey	[out]生成した個別化カード鍵(16byte)
+	 * @param masterKey	[in]個別化マスター鍵K(24byte)
+	 * @param id			[in]IDブロックM(16byte)
 	 * @return		true	作成成功
 	 */
 	static private boolean calcPersonalCardKey(byte[] personalKey, byte[] masterKey, byte[] id) {
@@ -585,18 +585,18 @@ public final class FelicaLiteIssuance {
 
 
 	/**
-	 * Triple-DES暗号化
-	 * 
-	 * CBC(Cipher Block Chaining)を使うため、初期ベクタが必要。
-	 * というよりも、「AとBとの排他的論理和を平文とし」の処理を自動でやってくれるのでCBCにした。
-	 * すなわち「(inBuf xor ips)を平文とし、keyを鍵としてトリプルDES暗号化」する。
+	 * Triple-DES暗号化<br>
+	 * <br>
+	 * CBC(Cipher Block Chaining)を使うため、初期ベクタが必要。<br>
+	 * というよりも、「AとBとの排他的論理和を平文とし」の処理を自動でやってくれるのでCBCにした。<br>
+	 * すなわち「(inBuf xor ips)を平文とし、keyを鍵としてトリプルDES暗号化」する。<br>
 	 *
-	 * @param outBuf		暗号化出力バッファ(8byte以上)
-	 * @param outOffset	暗号化出力バッファへの書き込み開始位置(ここから8byte書く)
-	 * @param key			秘密鍵(24byte [0-7]KEY1, [8-15]KEY2, [16-23]KEY3)
-	 * @param inBuf		平文バッファ(8byte以上)
-	 * @param inOffset		平文バッファの読み込み開始位置(ここから8byte読む)
-	 * @param ips			初期ベクタ(8byte)
+	 * @param outBuf		[out]暗号化出力バッファ(8byte以上)
+	 * @param outOffset	[in]暗号化出力バッファへの書き込み開始位置(ここから8byte書く)
+	 * @param key			[in]秘密鍵(24byte [0-7]KEY1, [8-15]KEY2, [16-23]KEY3)
+	 * @param inBuf		[in]平文バッファ(8byte以上)
+	 * @param inOffset		[in]平文バッファの読み込み開始位置(ここから8byte読む)
+	 * @param ips			[in]初期ベクタ(8byte)
 	 * @return		true	暗号化成功
 	 */
 	private static int enc83(byte[] outBuf, int outOffset, byte[] key, byte[] inBuf, int inOffset, IvParameterSpec ips) {
