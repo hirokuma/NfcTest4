@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import android.nfc.Tag;
 import android.nfc.tech.NfcF;
+import android.util.Log;
 
 
 /**
@@ -42,6 +43,7 @@ public class FelicaLite {
 	
 	public static final int SIZE_BLOCK = 16;
 
+	private static final String TAG = "FelicaLite";
 	private static Tag mTag;
 	private static NfcF mNfcF;
 
@@ -49,12 +51,13 @@ public class FelicaLite {
 	 * 使用する場合、最初に呼び出す。
 	 * 内部で{@link NfcF#connect()}を呼び出す。
 	 * 呼び出し場合、最後に{@link FelicaLite#close()}を呼び出すこと。
+	 * 
+	 * {@link FelicaLite#close()}が呼ばれるまでtagをキャッシュする。
 	 *
 	 * @param[in]	tag		intentで取得したTag
 	 * @return		NfcF
 	 * @throws IOException
-	 * @sa		{@link FelicaLite#close()}
-	 * @note	- {@link FelicaLite#close()}が呼ばれるまでtagをキャッシュする
+	 * @see		{@link FelicaLite#close()}
 	 */
 	public static NfcF connect(Tag tag) throws IOException {
 		mTag = tag;
@@ -63,16 +66,23 @@ public class FelicaLite {
 		return mNfcF;
 	}
 
+	
+	/**
+	 * {@link #connect(Tag)}を呼び出したかどうかのチェック
+	 * 
+	 * @return	true	呼び出している
+	 */
 	static boolean check() {
 		return (mTag != null) && (mNfcF != null);
 	}
+	
 
 	/**
 	 * {@link FelicaLite#connect()}を呼び出したら、最後に呼び出すこと。
 	 * 内部で{@link NfcF#close()}を呼び出す。
 	 *
 	 * @throws IOException
-	 * @sa		{@link FelicaLite#connect(Tag)}
+	 * @see		{@link FelicaLite#connect(Tag)}
 	 * @note	- {@link FelicaLite#connect(Tag)}でキャッシュしたtagを解放する
 	 */
 	public static void close() throws IOException {
@@ -84,9 +94,11 @@ public class FelicaLite {
 
 	/**
 	 * ポーリング
+	 * 
+	 * {@link FelicaLite#connect()}を呼び出しておくこと。
 	 *
-	 * @param[in] sc		サービスコード
-	 * @return				true:ポーリング成功
+	 * @param sc			[in]サービスコード
+	 * @return				true	ポーリング成功
 	 * @throws IOException
 	 */
 	public static boolean polling(int sc) throws IOException {
@@ -102,17 +114,20 @@ public class FelicaLite {
 
 		//length check
 		if(ret.length != 18) {
+			Log.e(TAG, "polling : length");
 			return false;
 		}
 		//IDm check
 		byte[] idm = mTag.getId();
 		for(int i=0; i<8; i++) {
 			if(ret[i+2] != idm[i]) {
+				Log.e(TAG, "polling : nfcid");
 				return false;
 			}
 		}
 		//response code check
 		if(ret[1] != 0x01) {
+			Log.e(TAG, "polling : response code");
 			return false;
 		}
 
@@ -122,15 +137,18 @@ public class FelicaLite {
 
 	/**
 	 * 1ブロック書込み
+	 * 
+	 * {@link FelicaLite#connect()}を呼び出しておくこと。
 	 *
-	 * @param[in] blockNo		書込対象のブロック番号
-	 * @param[in] data			書き込みデータ(先頭の16byteを使用)
-	 * @return		true:書込成功
+	 * @param blockNo		[in]書込対象のブロック番号
+	 * @param data			[in]書き込みデータ(先頭の16byteを使用)
+	 * @return		true	書込成功
 	 * @throws IOException
 	 */
 	public static boolean writeBlock(int blockNo, byte[] data) throws IOException {
 		if((data == null) || (data.length < 16)) {
 			//データ不正
+			Log.e(TAG, "writeBlock : param");
 			return false;
 		}
 
@@ -150,16 +168,19 @@ public class FelicaLite {
 
 		//length check
 		if(ret.length != 12) {
+			Log.e(TAG, "writeBlock : length");
 			return false;
 		}
 		//IDm check
 		for(int i=2+0; i<2+8; i++) {
 			if(ret[i] != buf[i]) {
+				Log.e(TAG, "writeBlock : nfcid");
 				return false;
 			}
 		}
 		//status flag check
 		if((ret[1] != 0x09) || (ret[10] != 0x00) || (ret[11] != 0x00)) {
+			Log.e(TAG, "writeBlock : status");
 			return false;
 		}
 		return true;
@@ -167,10 +188,12 @@ public class FelicaLite {
 
 
 	/**
-	 * 1ブロック読み込み
+	 * 1ブロック読み込み<br>
+	 * <br>
+	 * {@link FelicaLite#connect()}を呼び出しておくこと。
 	 *
-	 * @param[in] blockNo		読込対象のブロック番号
-	 * @return					(!=null)読み込んだ1ブロックデータ / (==null)エラー
+	 * @param blockNo		[in]読込対象のブロック番号
+	 * @return				(!=null)読み込んだ1ブロックデータ / (==null)エラー
 	 * @throws IOException
 	 */
 	public static byte[] readBlock(int blockNo) throws IOException {
@@ -189,16 +212,19 @@ public class FelicaLite {
 
 		//length check
 		if(ret.length != 29) {
+			Log.e(TAG, "readBlock : length");
 			return null;
 		}
 		//IDm check
 		for(int i=2+0; i<2+8; i++) {
 			if(ret[i] != buf[i]) {
+				Log.e(TAG, "readBlock : nfcid");
 				return null;
 			}
 		}
 		//status flag check
 		if((ret[1] != 0x07) || (ret[10] != 0x00) || (ret[11] != 0x00)) {
+			Log.e(TAG, "readBlock : status");
 			return null;
 		}
 
@@ -209,18 +235,20 @@ public class FelicaLite {
 	}
 
 	/**
-	 * nブロック読み込み
+	 * nブロック読み込み<br>
+	 * <br>
+	 * - {@link FelicaLite#connect()}を呼び出しておくこと。<br>
+	 * - blockNo.lengthが4より大きい場合、先頭の4つを使用する。<br>
 	 *
-	 * @param[in] blockNo		読込対象のブロック番号(4つまで)
-	 * @return					(!=null)読み込んだブロックデータ(blockNoの順) / (==null)エラー
+	 * @param blockNo		[in]読込対象のブロック番号(4つまで)
+	 * @return				(!=null)読み込んだブロックデータ(blockNoの順) / (==null)エラー
 	 * @throws IOException
-	 *
-	 * @note	- blockNo.lengthが4より大きい場合、先頭の4つを使用する
 	 */
 	public static byte[] readBlock(int[] blockNo) throws IOException {
 		int num = blockNo.length;
 		if(num > 4) {
 			//FeliCa Lite limit
+			Log.w(TAG, "readBlocks : 4blocks limit");
 			num = 4;
 		}
 		byte[] buf = new byte[14 + num * 2];
@@ -240,16 +268,19 @@ public class FelicaLite {
 
 		//length check
 		if(ret.length != 13 + num * SIZE_BLOCK) {
+			Log.e(TAG, "readBlocks : length");
 			return null;
 		}
 		//IDm check
 		for(int i=2+0; i<2+8; i++) {
 			if(ret[i] != buf[i]) {
+				Log.e(TAG, "readBlocks : nfcid");
 				return null;
 			}
 		}
 		//status flag check
 		if((ret[1] != 0x07) || (ret[10] != 0x00) || (ret[11] != 0x00) || (ret[12] != num)) {
+			Log.e(TAG, "readBlocks : status");
 			return null;
 		}
 

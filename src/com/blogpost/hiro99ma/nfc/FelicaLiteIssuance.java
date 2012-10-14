@@ -40,12 +40,13 @@ public final class FelicaLiteIssuance {
 	///////////////////////////
 
 	/**
-	 * １次発行(システムブロックの書き換え禁止設定は行わない)
+	 * １次発行(システムブロックの書き換え禁止設定は行わない)<br>
+	 * <br>
+	 * {@link FelicaLite#connect()}を呼び出しておくこと。
 	 *
-	 * @param dfd			DFD
-	 * @param masterKey		個別化マスター鍵(24byte)
-	 * @param keyVersion	鍵バージョン
-	 *
+	 * @param dfd			[in]DFD
+	 * @param masterKey	[in]個別化マスター鍵(24byte)
+	 * @param keyVersion	[in]鍵バージョン
 	 * @return			true	１次発行成功
 	 * @throws IOException 
 	 */
@@ -103,7 +104,7 @@ public final class FelicaLiteIssuance {
 		//やらない
 
 		// 7.3.8 システムブロックの書き換え禁止設定
-		//やらない
+		//これを行うと元に戻れなくなるので、コメントアウトしておく
 //		ret = writeIssuance1();
 //		if(!ret) {
 //			Log.e(TAG, "write Issuance sign fail.");
@@ -117,9 +118,9 @@ public final class FelicaLiteIssuance {
 	
 	/**
 	 * MAC比較
+	 * {@link FelicaLite#connect()}を呼び出しておくこと。
 	 *
-	 * @param masterKey	個別化マスター鍵(24byte)
-	 *
+	 * @param masterKey	[in]個別化マスター鍵(24byte)
 	 * @return		true	MAC一致
 	 * @throws IOException 
 	 */
@@ -127,6 +128,35 @@ public final class FelicaLiteIssuance {
 		return macCheckInternal(masterKey, null);
 	}
 
+
+	/**
+	 * システムブロックの書き換え禁止(MC_ALL)
+	 * 処理が成功した場合、MC_ALLレジスタは書き込み可能に戻すことができなくなる。
+	 * 本当に呼び出してよいかどうかは、FeliCa Liteユーザーズマニュアルを確認すること。
+	 * 少なくとも、NFCの実験目的でやっているような場合は、呼び出す必要はほとんどない。
+	 * 
+	 * @return		true:書き換え禁止成功
+	 * @throws IOException
+	 * @note	#FelicaLite.connect()を呼び出しておくこと。
+	 * @attention	実行すると、システム領域の一部が書込禁止になり、元に戻すことはできない
+	 */
+	public static boolean writeIssuance1() throws IOException {
+		byte[] buf = FelicaLite.readBlock(FelicaLite.MC);
+		if(buf == null) {
+			Log.v(TAG, "writeIssuance1 : read fail");
+			return false;
+		}
+		
+		// 7.3.8 システムブロックの書き換え禁止設定(不可逆)
+		buf[2] = 0x00;		//MC_ALL
+		boolean ret = FelicaLite.writeBlock(FelicaLite.MC, buf);
+		if(ret == false) {
+			Log.v(TAG, "writeIssuance1 : write fail");
+			return false;
+		}
+		return ret;
+	}
+	
 
 	/**
 	 * システムコード確認
@@ -197,11 +227,17 @@ public final class FelicaLiteIssuance {
 			return false;
 		}
 
+		//DFD
 		buf[8] = (byte)((dfd & 0xff00) >> 8);
 		buf[9] = (byte)(dfd & 0xff);
-		for(int i=10; i<FelicaLite.SIZE_BLOCK; i++) {
-			buf[i] = 0x00;
-		}
+		
+		//any value
+		buf[10] = 'h';
+		buf[11] = 'i';
+		buf[12] = 'r';
+		buf[13] = 'o';
+		buf[14] = '9';
+		buf[15] = '9';
 		boolean ret = writeWithCheck(buf, FelicaLite.ID);
 		if(ret == false) {
 			Log.v(TAG, "writeID : write fail");
@@ -210,6 +246,7 @@ public final class FelicaLiteIssuance {
 
 		return true;
 	}
+	
 
 	/**
 	 * カード鍵の書き込み.
@@ -332,28 +369,6 @@ public final class FelicaLiteIssuance {
 	}
 	
 	
-	/**
-	 * システムブロックの書き換え禁止(MC_ALL)
-	 * 
-	 * @return		true:書き換え禁止成功
-	 * @throws IOException
-	 */
-	private static boolean writeIssuance1() throws IOException {
-		byte[] buf = FelicaLite.readBlock(FelicaLite.MC);
-		if(buf == null) {
-			Log.v(TAG, "writeIssuance1 : read fail");
-			return false;
-		}
-		buf[2] = 0x00;		//1次発行済み
-		boolean ret = FelicaLite.writeBlock(FelicaLite.MC, buf);
-		if(ret == false) {
-			Log.v(TAG, "writeIssuance1 : write fail");
-			return false;
-		}
-		return ret;
-	}
-	
-
 	/**
 	 * チェック付きブロック書き込み(16byte)
 	 *
