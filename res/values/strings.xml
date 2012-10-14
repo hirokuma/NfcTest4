@@ -7,5 +7,6 @@
     <string name="btn_read">Read</string>
     <string name="btn_write">Write</string>
     <string name="btn_read_did">Read D_ID</string>
+    <string name="btn_chk">Check</string>
 
 </resources>

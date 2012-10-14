@@ -2,6 +2,8 @@ package com.blogpost.hiro99ma.nfc;
 
 import java.io.IOException;
 
+import com.blogpost.hiro99ma.nfc.FelicaLiteIssuance.Result;
+
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.NfcF;
@@ -121,6 +123,67 @@ public class MainActivity extends Activity {
 			byte[] wr = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
 			boolean ret = FelicaLite.writeBlock(10, wr);
 			if(ret) {
+				Toast.makeText(this, "success", Toast.LENGTH_SHORT).show();
+			} else {
+				Toast.makeText(this, "fail", Toast.LENGTH_SHORT).show();
+			}
+			FelicaLite.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void onClickIssue(View v) {
+		if (mTag == null) {
+			Toast.makeText(this, "no card", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		try {
+			FelicaLite.connect(mTag);
+			byte[] wr = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24 };
+			FelicaLiteIssuance.Result ret = FelicaLiteIssuance.issuance1((short)0x1234, wr, (short)1);
+			if(ret == Result.SUCCESS) {
+				Toast.makeText(this, "success", Toast.LENGTH_SHORT).show();
+			} else {
+				Toast.makeText(this, "fail", Toast.LENGTH_SHORT).show();
+			}
+			FelicaLite.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	public void onClickCheck1(View v) {
+		if (mTag == null) {
+			Toast.makeText(this, "no card", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		try {
+			FelicaLite.connect(mTag);
+			byte[] wr = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24 };
+			boolean ret = FelicaLiteIssuance.macCheck(wr);
+			if(ret == true) {
+				Toast.makeText(this, "success", Toast.LENGTH_SHORT).show();
+			} else {
+				Toast.makeText(this, "fail", Toast.LENGTH_SHORT).show();
+			}
+			FelicaLite.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void onClickCheck2(View v) {
+		if (mTag == null) {
+			Toast.makeText(this, "no card", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		try {
+			FelicaLite.connect(mTag);
+			byte[] wr = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25 };
+			boolean ret = FelicaLiteIssuance.macCheck(wr);
+			if(ret == true) {
 				Toast.makeText(this, "success", Toast.LENGTH_SHORT).show();
 			} else {
 				Toast.makeText(this, "fail", Toast.LENGTH_SHORT).show();
